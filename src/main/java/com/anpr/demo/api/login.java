@@ -30,6 +30,8 @@ public class login {
         this.uname=uname;
         this.password=password;
         this.type=type;
+        
+        System.out.println(uname+" "+password+" "+type);
     }
 
     public static String getMd5(String input)
@@ -72,10 +74,12 @@ public class login {
     }
 
     public String getUname() {
+    	System.out.println(uname);
         return uname;
     }
 
     public void setUname(String uname) {
+    	System.out.println(uname);
         this.uname = uname;
     }
 
