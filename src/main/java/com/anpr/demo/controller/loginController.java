@@ -337,7 +337,7 @@ public class loginController {
 	{
 		int t=0-toll;
 		this.updateToll(nump, t);
-		return this.getallNumberPlate();
+		return this.getallNumberPlatebyname(name);
 	}
 	
 	@GetMapping("getallcardata/{numberplate}")
