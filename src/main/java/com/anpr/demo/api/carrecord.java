@@ -13,7 +13,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "login")
+@Table(name = "carrecord")
 public class carrecord {
 	@Id
 	@Column(name="id")

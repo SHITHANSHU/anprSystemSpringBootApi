@@ -79,7 +79,8 @@ public class loginController {
 	@GetMapping("insertcarrecord/{num}/{tollam}/{tollco}")
 	public List<carrecord> insertCarRecord(@PathVariable("num") String num,@PathVariable("tollam") int tollam,@PathVariable("tollco") String tollco)
 	{
-		carrecord c=new carrecord(num, tollam, new java.util.Date(), tollco)
+		carrecord c=new carrecord(num, tollam, new java.util.Date(), tollco);
+		this.carrecordrep.save(c);
 		return this.carrecordrep.findAll();
 	}
 	
