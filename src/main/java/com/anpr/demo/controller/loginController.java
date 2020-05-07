@@ -1,18 +1,22 @@
 package com.anpr.demo.controller;
 
+import java.util.Date;
 import java.util.List;
 
+import org.apache.naming.java.javaURLContextFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.anpr.demo.api.carrecord;
 import com.anpr.demo.api.login;
 import com.anpr.demo.api.numberplate;
 import com.anpr.demo.api.session;
 import com.anpr.demo.api.tolldata;
 import com.anpr.demo.api.tollrecord;
+import com.anpr.demo.repo.carrecordRep;
 import com.anpr.demo.repo.loginRep;
 import com.anpr.demo.repo.numberplateRep;
 import com.anpr.demo.repo.sessionRep;
@@ -33,7 +37,8 @@ public class loginController {
 	private tolldataRep tolldatarep;
 	@Autowired
 	private tollrecordRep tollrecordrep;
-	
+	@Autowired
+	private carrecordRep carrecordrep; 
 	
 	@GetMapping("getalllogin")
 	public List<login> getallLogin()
@@ -64,6 +69,19 @@ public class loginController {
 		return this.numrep.findAll();
 	}
 	
+	
+	@GetMapping("getallcarrecord")
+	public List<carrecord> getallCarRecord()
+	{
+		return this.carrecordrep.findAll();
+	}
+	
+	@GetMapping("insertcarrecord/{num}/{tollam}/{tollco}")
+	public List<carrecord> insertCarRecord(@PathVariable("num") String num,@PathVariable("tollam") int tollam,@PathVariable("tollco") String tollco)
+	{
+		carrecord c=new carrecord(num, tollam, new java.util.Date(), tollco)
+		return this.carrecordrep.findAll();
+	}
 	
 	
 	@GetMapping("getallsession")

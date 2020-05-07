@@ -31,6 +31,17 @@ public class tolldata {
         this.exception = exception;
     }
 
+    public String getId()
+    {
+    	return this.id;
+    }
+    
+    public void setId(String id)
+    {
+    	this.id=id;
+    }
+    
+    
     public String getCode() {
         return code;
     }
