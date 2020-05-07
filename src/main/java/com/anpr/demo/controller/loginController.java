@@ -80,7 +80,7 @@ public class loginController {
 	{
 		Optional<numberplate> nu=this.numrep.findById(id);
 		numberplate su;
-		if(!nu.isPresent())
+		if(nu.isPresent())
 		{
 			su=nu.get();
 			su.setLicense(lic);
@@ -108,7 +108,7 @@ public class loginController {
 	{
 		Optional<numberplate> nu=this.numrep.findById(id);
 		numberplate su;
-		if(!nu.isPresent())
+		if(nu.isPresent())
 		{
 			su=nu.get();
 			su.setLicense(lic);
@@ -283,7 +283,7 @@ public class loginController {
 	{
 		Optional<tollrecord> nu=this.tollrecordrep.findById(id);
 		tollrecord su;
-		if(!nu.isPresent())
+		if(nu.isPresent())
 		{
 			su=nu.get();
 			su.setCode(id);
@@ -322,7 +322,7 @@ public class loginController {
 	{
 		Optional<numberplate> nu=this.numrep.findById(nump);
 		numberplate su;
-		if(!nu.isPresent())
+		if(nu.isPresent())
 		{
 			su=nu.get();
 			int t=su.getToll()+toll;
