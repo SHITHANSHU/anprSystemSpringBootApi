@@ -130,7 +130,7 @@ public class loginController {
 		return this.numrep.findAll();
 	}
 	
-	@GetMapping("deleteuser/{id}/{name]")
+	@GetMapping("deleteuser/{id}/{name}")
 	public List<numberplate> deleteuser(@PathVariable("id") String id,@PathVariable("name") String name)
 	{
 		this.numrep.deleteById(id);
