@@ -1,19 +1,37 @@
 package com.anpr.demo.controller;
 
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLConnection;
+import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-//import org.apache.naming.java.javaURLContextFactory;
-//import org.apache.naming.java.javaURLContextFactory;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring4.SpringTemplateEngine;
+import org.w3c.tidy.Tidy;
+import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import com.anpr.demo.api.carrecord;
 import com.anpr.demo.api.login;
@@ -27,6 +45,8 @@ import com.anpr.demo.repo.numberplateRep;
 import com.anpr.demo.repo.sessionRep;
 import com.anpr.demo.repo.tolldataRep;
 import com.anpr.demo.repo.tollrecordRep;
+import com.itextpdf.text.DocumentException;
+
 
 @CrossOrigin
 @RestController
@@ -67,11 +87,92 @@ public class loginController {
 		return this.numrep.findAll();
 	}
 	
+	@GetMapping("initall/numdatav")
+	public List<numberplate> initall() throws DocumentException, IOException
+	{
+		List<numberplate> n=this.getallNumberPlate();
+		for(numberplate num:n)
+		{
+		System.out.println(System.getProperty("java.class.path"));
+		Context context = new Context();
+        numberplate k=num;
+        context.setVariable("name",k.getName());
+        context.setVariable("lic",k.getLicense());
+        context.setVariable("nump",k.getId());
+        context.setVariable("mobile",k.getMobile());
+        context.setVariable("type",this.gettypeString(k.getType()));
+
+        context.setVariable("tollpaid",0);
+        
+        context.setVariable("dueamnt",k.getToll());
+        context.setVariable("date",new java.util.Date());
+        String message="the account was created";
+        context.setVariable("msg", message);
+
+        
+        String htmlContentToRender = templateEngine.process("template", context);
+        String xHtml = xhtmlConvert(htmlContentToRender);
+
+        ITextRenderer renderer = new ITextRenderer();
+
+        String baseUrl = FileSystems
+                .getDefault()
+                .getPath("src", "main", "resources","templates")
+                .toUri()
+                .toURL()
+                .toString();
+        renderer.setDocumentFromString(xHtml, baseUrl);
+        renderer.layout();
+
+        java.io.OutputStream outputStream = new FileOutputStream("src/main/resources/temp_download/noc"+num.getId()+".pdf");
+        renderer.createPDF(outputStream);
+        outputStream.close();
+		}
+		return this.numrep.findAll();
+	}
+
+	
+	
 	@GetMapping("insert/{id}/{lic}/{mobile}/{name}/{toll}/{type}")
-	public List<numberplate> insertNumberPlate(@PathVariable("id") String id,@PathVariable("lic") String lic,@PathVariable("mobile") int mobile,@PathVariable("name") String name,@PathVariable("toll") int toll,@PathVariable("type") int type)
+	public List<numberplate> insertNumberPlate(@PathVariable("id") String id,@PathVariable("lic") String lic,@PathVariable("mobile") int mobile,@PathVariable("name") String name,@PathVariable("toll") int toll,@PathVariable("type") int type) throws DocumentException, IOException
 	{
 		numberplate num=new numberplate(id, lic, mobile, name, toll,type);
 		this.numrep.save(num);
+		System.out.println(System.getProperty("java.class.path"));
+		Context context = new Context();
+        numberplate k=num;
+        context.setVariable("name",k.getName());
+        context.setVariable("lic",k.getLicense());
+        context.setVariable("nump",k.getId());
+        context.setVariable("mobile",k.getMobile());
+        context.setVariable("type",this.gettypeString(k.getType()));
+
+        context.setVariable("tollpaid",0);
+        
+        context.setVariable("dueamnt",k.getToll());
+        context.setVariable("date",new java.util.Date());
+        String message="the account was created";
+        context.setVariable("msg", message);
+
+        
+        String htmlContentToRender = templateEngine.process("template", context);
+        String xHtml = xhtmlConvert(htmlContentToRender);
+
+        ITextRenderer renderer = new ITextRenderer();
+
+        String baseUrl = FileSystems
+                .getDefault()
+                .getPath("src", "main", "resources","templates")
+                .toUri()
+                .toURL()
+                .toString();
+        renderer.setDocumentFromString(xHtml, baseUrl);
+        renderer.layout();
+
+        java.io.OutputStream outputStream = new FileOutputStream("src/main/resources/temp_download/noc"+num.getId()+".pdf");
+        renderer.createPDF(outputStream);
+        outputStream.close();
+
 		return this.numrep.findAll();
 	}
 	
@@ -95,13 +196,63 @@ public class loginController {
 		return this.numrep.findAll();
 	}
 
+	public String gettypeString(int a)
+	{
+		switch(a)
+		{
+		case 1: return	"Car/SUV/Van";
+		case 2: return	"Mini Bus";
+		case 3: return	"Truck (2 axels)";
+		case 4: return	"Bus";
+		case 5: return	"Truck (>2 axel)";
+		case 6: return	"Crane/multi axel vehicles";
+		}
+		
+		return "vehicle";
+	}
+	
 	@GetMapping("insertuser/{id}/{lic}/{mobile}/{name}/{toll}/{type}")
-	public List<numberplate> insertNumberPlateuser(@PathVariable("id") String id,@PathVariable("lic") String lic,@PathVariable("mobile") int mobile,@PathVariable("name") String name,@PathVariable("toll") int toll,@PathVariable("type") int type)
+	public List<numberplate> insertNumberPlateuser(@PathVariable("id") String id,@PathVariable("lic") String lic,@PathVariable("mobile") int mobile,@PathVariable("name") String name,@PathVariable("toll") int toll,@PathVariable("type") int type) throws DocumentException, IOException
 	{
 		numberplate num=new numberplate(id, lic, mobile, name, toll,type);
 		this.numrep.save(num);
+		System.out.println(System.getProperty("java.class.path"));
+		Context context = new Context();
+        numberplate k=num;
+        context.setVariable("name",k.getName());
+        context.setVariable("lic",k.getLicense());
+        context.setVariable("nump",k.getId());
+        context.setVariable("mobile",k.getMobile());
+        context.setVariable("type",this.gettypeString(k.getType()));
+
+        context.setVariable("tollpaid",0);
+
+        context.setVariable("dueamnt",k.getToll());
+        context.setVariable("date",new java.util.Date());
+        context.setVariable("msg", "the account was created");
+
+        
+        String htmlContentToRender = templateEngine.process("template", context);
+        String xHtml = xhtmlConvert(htmlContentToRender);
+
+        ITextRenderer renderer = new ITextRenderer();
+
+        String baseUrl = FileSystems
+                .getDefault()
+                .getPath("src", "main", "resources","templates")
+                .toUri()
+                .toURL()
+                .toString();
+        renderer.setDocumentFromString(xHtml, baseUrl);
+        renderer.layout();
+
+        java.io.OutputStream outputStream = new FileOutputStream("src/main/resources/temp_download/noc"+num.getId()+".pdf");
+        renderer.createPDF(outputStream);
+        outputStream.close();
+
 		return this.getallNumberPlatebyname(name);
 	}
+
 	
 	@GetMapping("updateuser/{id}/{lic}/{mobile}/{name}/{toll}/{type}")
 	public List<numberplate> updateNumberPlateuser(@PathVariable("id") String id,@PathVariable("lic") String lic,@PathVariable("mobile") int mobile,@PathVariable("name") String name,@PathVariable("toll") int toll,@PathVariable("type") int type)
@@ -127,6 +278,11 @@ public class loginController {
 	public List<numberplate> deleteuser(@PathVariable("id") String id)
 	{
 		this.numrep.deleteById(id);
+		File f=new File("src/main/resources/temp_download/noc"+id+".pdf");
+		if(f.delete())
+		{
+			System.out.println("deleted");
+		}
 		return this.numrep.findAll();
 	}
 	
@@ -134,6 +290,11 @@ public class loginController {
 	public List<numberplate> deleteuser(@PathVariable("id") String id,@PathVariable("name") String name)
 	{
 		this.numrep.deleteById(id);
+		File f=new File("src/main/resources/temp_download/noc"+id+".pdf");
+		if(f.delete())
+		{
+			System.out.println("deleted");
+		}
 		return this.getallNumberPlatebyname(name);
 	}
 	
@@ -318,7 +479,7 @@ public class loginController {
 		return this.numrep.findById(nump);
 	}
 	
-	public void updateToll(String nump,int toll)
+	public void updateToll(String nump,int toll) throws DocumentException, IOException
 	{
 		Optional<numberplate> nu=this.numrep.findById(nump);
 		numberplate su;
@@ -327,13 +488,87 @@ public class loginController {
 			su=nu.get();
 			int t=su.getToll()+toll;
 			su.setToll(t);
-
 			this.numrep.save(su);
+			if(toll<0)
+			{
+				toll*=-1;
+				System.out.println(System.getProperty("java.class.path"));
+				Context context = new Context();
+		        numberplate k=nu.get();
+		        context.setVariable("name",k.getName());
+		        context.setVariable("lic",k.getLicense());
+		        context.setVariable("nump",k.getId());
+		        context.setVariable("mobile",k.getMobile());
+		        context.setVariable("type",this.gettypeString(k.getType()));
+
+		        context.setVariable("tollpaid",toll);
+
+		        context.setVariable("dueamnt",k.getToll());
+		        context.setVariable("date",new java.util.Date());
+
+
+		        context.setVariable("msg", "the amount was paid");
+		        
+		        String htmlContentToRender = templateEngine.process("template", context);
+		        String xHtml = xhtmlConvert(htmlContentToRender);
+
+		        ITextRenderer renderer = new ITextRenderer();
+
+		        String baseUrl = FileSystems
+		                .getDefault()
+		                .getPath("src", "main", "resources","templates")
+		                .toUri()
+		                .toURL()
+		                .toString();
+		        renderer.setDocumentFromString(xHtml, baseUrl);
+		        renderer.layout();
+
+		        java.io.OutputStream outputStream = new FileOutputStream("src/main/resources/temp_download/noc"+nu.get().getId()+".pdf");
+		        renderer.createPDF(outputStream);
+		        outputStream.close();
+
+
+			}
+			
+			
+			
 		}
 	}
 	
+	
+	@RequestMapping("/getnocfile/{id}")
+	public void downloadPDFResource(HttpServletRequest request, HttpServletResponse response,
+			@PathVariable("id") String id) throws IOException {
+		System.out.println("called");
+		String fileName="noc"+id+".pdf";
+		File file = new File("src/main/resources/temp_download/"+fileName);
+		if (file.exists()) {
+
+			//get the mimetype
+			String mimeType = URLConnection.guessContentTypeFromName(file.getName());
+			if (mimeType == null) {
+				//unknown mimetype so set the mimetype to application/octet-stream
+				mimeType = "application/octet-stream";
+			}
+
+			response.setContentType(mimeType);
+
+
+			response.setHeader("Content-Disposition", String.format("inline; filename=\"" + file.getName() + "\""));
+			response.setContentLength((int) file.length());
+
+			InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+
+			FileCopyUtils.copy(inputStream, response.getOutputStream());
+
+		
+		}
+	}
+
+	
+	
 	@GetMapping("removetoll/{numberplate}/{toll}/{name}")
-	public List<numberplate> addToll(@PathVariable("numberplate") String nump,@PathVariable("toll") int toll,@PathVariable("name") String name)
+	public List<numberplate> addToll(@PathVariable("numberplate") String nump,@PathVariable("toll") int toll,@PathVariable("name") String name) throws DocumentException, IOException
 	{
 		int t=0-toll;
 		this.updateToll(nump, t);
@@ -382,7 +617,7 @@ public class loginController {
 
 	
 	@GetMapping("addtoll/{numberplate}/{code}")
-	public List<numberplate> addToll(@PathVariable("numberplate") String nump,@PathVariable("code") String code)
+	public List<numberplate> addToll(@PathVariable("numberplate") String nump,@PathVariable("code") String code) throws DocumentException, IOException
 	{
 		String numco=nump.substring(0,Math.min(nump.length(),4));
 		Optional<numberplate> num=this.getNumberPlateByNumber(nump);
@@ -417,4 +652,55 @@ public class loginController {
 		this.carrecordrep.save(c);
 		return this.getallNumberPlate();
 	}
+	
+	
+	@Autowired
+    SpringTemplateEngine templateEngine;
+	
+	@RequestMapping("/getdetails/{id}")
+    public @ResponseBody numberplate savePDF(@PathVariable("id") String id) throws IOException, DocumentException {
+
+		System.out.println(System.getProperty("java.class.path"));
+		Context context = new Context();
+        Optional<numberplate> s=this.numrep.findById(id);
+        numberplate k=s.get();
+        context.setVariable("name",k.getName());
+        context.setVariable("marks",k.getLicense());
+
+        
+        String htmlContentToRender = templateEngine.process("template", context);
+        String xHtml = xhtmlConvert(htmlContentToRender);
+
+        ITextRenderer renderer = new ITextRenderer();
+
+        String baseUrl = FileSystems
+                .getDefault()
+                .getPath("src", "main", "resources","templates")
+                .toUri()
+                .toURL()
+                .toString();
+        renderer.setDocumentFromString(xHtml, baseUrl);
+        renderer.layout();
+
+        java.io.OutputStream outputStream = new FileOutputStream("src/main/resources/temp_download/test.pdf");
+        renderer.createPDF(outputStream);
+        outputStream.close();
+
+        return k;
+
+    }
+
+    private String xhtmlConvert(String html) throws UnsupportedEncodingException {
+        Tidy tidy = new Tidy();
+        tidy.setInputEncoding("UTF-8");
+        tidy.setOutputEncoding("UTF-8");
+        tidy.setXHTML(true);
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(html.getBytes("UTF-8"));
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        tidy.parseDOM(inputStream, outputStream);
+        return outputStream.toString("UTF-8");
+    }
+
+
+	
 }
