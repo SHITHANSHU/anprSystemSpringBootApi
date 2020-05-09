@@ -211,6 +211,8 @@ public class loginController {
 		return "vehicle";
 	}
 	
+	
+	
 	@GetMapping("insertuser/{id}/{lic}/{mobile}/{name}/{toll}/{type}")
 	public List<numberplate> insertNumberPlateuser(@PathVariable("id") String id,@PathVariable("lic") String lic,@PathVariable("mobile") int mobile,@PathVariable("name") String name,@PathVariable("toll") int toll,@PathVariable("type") int type) throws DocumentException, IOException
 	{
@@ -251,6 +253,50 @@ public class loginController {
         outputStream.close();
 
 		return this.getallNumberPlatebyname(name);
+	}
+
+	
+	public void createFile(String id) throws DocumentException, IOException
+	{
+		
+		Optional<numberplate> num2=this.numrep.findById(id);
+		numberplate num=num2.get();
+		this.numrep.save(num);
+		System.out.println(System.getProperty("java.class.path"));
+		Context context = new Context();
+        numberplate k=num;
+        context.setVariable("name",k.getName());
+        context.setVariable("lic",k.getLicense());
+        context.setVariable("nump",k.getId());
+        context.setVariable("mobile",k.getMobile());
+        context.setVariable("type",this.gettypeString(k.getType()));
+
+        context.setVariable("tollpaid",0);
+
+        context.setVariable("dueamnt",k.getToll());
+        context.setVariable("date",new java.util.Date());
+        context.setVariable("msg", "the account was created");
+
+        
+        String htmlContentToRender = templateEngine.process("template", context);
+        String xHtml = xhtmlConvert(htmlContentToRender);
+
+        ITextRenderer renderer = new ITextRenderer();
+
+        String baseUrl = FileSystems
+                .getDefault()
+                .getPath("src", "main", "resources","templates")
+                .toUri()
+                .toURL()
+                .toString();
+        renderer.setDocumentFromString(xHtml, baseUrl);
+        renderer.layout();
+
+        java.io.OutputStream outputStream = new FileOutputStream("src/main/resources/temp_download/noc"+num.getId()+".pdf");
+        renderer.createPDF(outputStream);
+        outputStream.close();
+
+
 	}
 
 	
@@ -538,10 +584,17 @@ public class loginController {
 	
 	@RequestMapping("/getnocfile/{id}")
 	public void downloadPDFResource(HttpServletRequest request, HttpServletResponse response,
-			@PathVariable("id") String id) throws IOException {
+			@PathVariable("id") String id) throws IOException, DocumentException {
 		System.out.println("called");
 		String fileName="noc"+id+".pdf";
+		
+		
+		
 		File file = new File("src/main/resources/temp_download/"+fileName);
+		if(!file.exists())
+		{
+			this.createFile(id);
+		}
 		if (file.exists()) {
 
 			//get the mimetype
