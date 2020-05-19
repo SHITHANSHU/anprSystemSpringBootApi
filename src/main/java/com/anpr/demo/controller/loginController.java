@@ -591,10 +591,14 @@ public class loginController {
 		
 		
 		File file = new File("src/main/resources/temp_download/"+fileName);
+		
 		if(!file.exists())
 		{
+		
 			this.createFile(id);
+		
 		}
+		
 		if (file.exists()) {
 
 			//get the mimetype
