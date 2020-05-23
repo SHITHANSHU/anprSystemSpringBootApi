@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLConnection;
 import java.nio.file.FileSystems;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -648,9 +649,13 @@ public class loginController {
 	{
 		List<carrecord> carrecords=this.carrecordrep.findAll();
 		List<carrecord> carrecords2=new ArrayList<carrecord>();
+		System.out.println(nump+d+co);
 		for(carrecord c:carrecords)
 		{
-			if(c.getNumberplate().contentEquals(nump) && c.getDate().equals(d) && c.getTollcode().equals(co))
+			String d1=c.getDate().toString().substring(0,10);
+			String d2=(new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date())).toString();
+			System.out.println(d1+d2);
+			if(c.getNumberplate().equals(nump) && d1.contentEquals(d2) && c.getTollcode().equals(co))
 				carrecords2.add(c);
 		}
 		return carrecords2;
@@ -688,12 +693,13 @@ public class loginController {
 		else
 		{
 		List<carrecord> carrecords=this.getcardataparam(nump,new java.util.Date(), code);
+		System.out.println(nump+code+" size"+carrecords.size());
 		if(carrecords.size()>0)
 		{
 			Optional<tollrecord> tr=this.tollrecordrep.findById(code);
 			Optional<tollrecord> tr2=this.tollrecordrep.findById("ret"+code);
 			
-			toll=this.gettoll(tr.get(), typeval)-this.gettoll(tr2.get(), typeval);
+			toll=this.gettoll(tr2.get(), typeval)-this.gettoll(tr.get(), typeval);
 		}
 		else
 		{
